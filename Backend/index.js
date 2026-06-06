@@ -1,46 +1,51 @@
 const Fastify = require('fastify');
+const WebSocket = require('ws');
 
 const app = Fastify();
 
-const route = [
+const buses = [
   {
+    id: 1,
     latitude: 16.506,
     longitude: 80.648,
   },
   {
-    latitude: 16.507,
-    longitude: 80.649,
-  },
-  {
+    id: 2,
     latitude: 16.508,
     longitude: 80.650,
   },
   {
-    latitude: 16.509,
-    longitude: 80.651,
+    id: 3,
+    latitude: 16.504,
+    longitude: 80.646,
   },
 ];
 
-let currentIndex = 0;
+const wss = new WebSocket.Server({ port: 8080 });
+
+wss.on('connection', (ws) => {
+  console.log('Client Connected');
+});
 
 setInterval(() => {
-  const currentLocation = route[currentIndex];
+  buses.forEach((bus) => {
+    bus.latitude += 0.0005;
+    bus.longitude += 0.0005;
+  });
 
-  console.log(currentLocation);
-
-  currentIndex++;
-
-  if (currentIndex >= route.length) {
-    currentIndex = 0;
-  }
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(buses));
+    }
+  });
 }, 2000);
 
-app.get('/', async () => {
+app.get('/', () => {
   return {
     message: 'Server Running',
   };
 });
 
 app.listen({ port: 3001 }, () => {
-  console.log('Server Running on Port 3001');
+  console.log('Fastify Running');
 });
